@@ -1,7 +1,7 @@
 # Orbitlist
 This javascript (plus some small css) turns every ul within a html file that has the class .orbit into an orbital navigation with first level li items becoming the lowest orbit and the deepest li items becoming the highest orbit.
 
-# Using orbitlistJS
+## Using Orbitlist
 1. Start an html document
 1. Include current version of jQuery
 2. Include orbitlist.js

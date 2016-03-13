@@ -1,0 +1,37 @@
+/* Website-Container */
+
+.container {
+    position: relative;
+    width: 1000px;
+    height: 600px;
+    background: #ddd;
+    overflow: hidden;
+}
+
+/* Style der Satelliten */
+
+.orbit li {
+    width: 60px;
+    height: 60px;
+    border-radius: 60px;
+    border: 2px solid #000;
+	background: #fff;
+    text-align: center;
+    line-height: 60px;
+}
+
+ul.orbit.orbitlistJS li {
+    transition: all 0.2s linear;
+}
+
+ul.orbit.orbitlistJS li:hover {
+    background: #24d;
+}
+
+.orbit li.orbitlistJS-trace {
+    background: #1ca;
+}
+
+.orbit li.orbitlistJS-active {
+    background: #2F4;
+}

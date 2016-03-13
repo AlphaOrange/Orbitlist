@@ -10,11 +10,6 @@ var defaultBorders = 1;     // Raum zwischen Limit und innerem/äußerem Level
 var minDensity = 8;
 var minDensityLevel1 = 4; // minimale density auf Level 1 - bei Unterschreiten asymmetrisch
 
-// TODO3: besonders getaggt ul/li ignorieren, sodass Listen möglich sind
-// TODO2: Wording: knots/elements, depth/level
-// TODO2: Alle data Attribute präfixen, um Konflikte zu vermeiden
-// TODO1: CSS-Klassen für untere, aktive und höhere Ränge
-
 function $orbitlistJS_trace(knot) {
     while (knot.length) {
         knot.addClass('orbitlistJS-trace');
@@ -102,6 +97,7 @@ function $orbitlistJS_updateOrbit(orbit) {
             var posTop = radius * distance / 2 * (-Math.cos((index / density + angle) * Math.PI * 2)) + radius / 2 + orbit.parent().offset().top + offsetTop - knot.height() / 2;
             var posLeft = radius * distance / 2 * (Math.sin((index / density + angle) * Math.PI * 2)) + radius / 2 + orbit.parent().offset().left + offsetLeft - knot.width() / 2;
             knot.offset({top: posTop, left: posLeft});
+            
             // Winkel für Kindknoten speichern
             knot.data('angle', index / density + angle);
         });
@@ -115,8 +111,6 @@ function $orbitlistJS_updateOrbit(orbit) {
 }
 
 $(function () {
-
-    // Vorher: alle Knoten data-Infos geben: Tiefe und Index
 
     // Jede Liste mit .orbit umwandeln
     $('ul.orbit').each(function (index) {

@@ -32,7 +32,7 @@ function $orbitlistJS_ironOrbit(orbit) {
         
         // Tiefe auswerten und css-Klasse anlegen
         var depth = (knot.parents().length - baseDepth + 1) / 2;
-        knot.addClass('orbitlistJS-depth-' + depth);
+        knot.addClass('orbitlistJS-orbit-' + depth);
         knot.data('depth', depth);
         orbitDepth = Math.max(orbitDepth, depth);
 
@@ -66,7 +66,7 @@ function $orbitlistJS_updateOrbit(orbit) {
     
     // Initiale Knoten
     var knotDepth = 1;
-    var knots = orbit.find('.orbitlistJS-depth-1');
+    var knots = orbit.find('.orbitlistJS-orbit-1');
 
     var borders = orbit.data('orbitlistjs-borders');
     var inner = orbit.data('orbitlistjs-inner');
@@ -104,7 +104,7 @@ function $orbitlistJS_updateOrbit(orbit) {
         
         // Eine Ebene tiefer steigen
         knotDepth++;
-        knots = orbit.find('.orbitlistJS-depth-' + knotDepth + ':visible');
+        knots = orbit.find('.orbitlistJS-orbit-' + knotDepth + ':visible');
         
     } while (knots.length);
 

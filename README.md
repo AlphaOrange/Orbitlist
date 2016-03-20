@@ -1,10 +1,10 @@
-# Orbitlist
+# Orbitlist.js
 This jQuery plugin turns every ul within a html file that has the class .orbit into an orbital navigation with first level li items becoming the lowest orbit and the deepest li items becoming the highest orbit.
 
 ## Demos and Documentation
 <http://orabitlist.alphaorange.de>
 
-## Quick start for Orbitlist
+## Quick start for Orbitlist.js
 1. Start an html document
 2. Include current version of jQuery
 3. Include orbitlist.js

@@ -1,12 +1,12 @@
-/* orbitlist.css */
-
-ul.orbit.orbitlistJS, ul.orbit.orbitlistJS ul {
+/* Orbitlist core */
+ul.orbit.orbitlistJS {
     list-style-type: none;
     margin: 0;
     padding: 0;
     position: relative;
 }
 
+/* Orbitlist satellites */
 ul.orbit.orbitlistJS li {
     position: absolute;
     cursor: pointer;

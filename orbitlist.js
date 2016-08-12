@@ -1,238 +1,215 @@
-// jQuery extension: reverse jQuery element order
-jQuery.fn.reverse = [].reverse;
+(function ( $) {
+	// jQuery extension: reverse jQuery element order
+	jQuery.fn.reverse = [].reverse;
 
 
-// Default values for inner and outer radius limits (between 0 and 1)
-var defaultInner = 0;       // Inner limit for radius
-var defaultOuter = 1;       // Outer limit for radius
-var defaultBorders = 1;     // Factor for space between limit
-                            // and inner/outer orbit
+	// Default values for inner and outer radius limits (between 0 and 1)
+	var defaultInner = 0;       // Inner limit for radius
+	var defaultOuter = 1;       // Outer limit for radius
+	var defaultBorders = 1;     // Factor for space between limit
+								// and inner/outer orbit
 
-// Default value for starting degree
-var defaultBegin = 0;
-
-// TODO: not yet implemented: Min density of satellites
-var minDensity = 8;
-var minDensityLevel1 = 4;   // Min density for 1st orbit,
-                            // orbitlist becomes asymetric if less satellites
+	// TODO: not yet implemented: Min density of satellites
+	var minDensity = 8;
+	var minDensityLevel1 = 4;   // Min density for 1st orbit,
+								// orbitlist becomes asymetric if less satellites
 
 
-// Trace satellite back to root
-function $orbitlistJS_trace(satellite) {
-    while (satellite.length) {
-        satellite.addClass('orbitlistJS-trace');
-        satellite = satellite.data('parent');
-    }
-}
+	// Trace satellite back to root
+	function $orbitlistJS_trace(satellite) {
+		while (satellite.length) {
+			satellite.addClass('orbitlistJS-trace');
+			satellite = satellite.data('parent');
+		}
+	}
 
 
-// Flatten Orbitlist HTML to one level only
-function $orbitlistJS_flatten(core) {
+	// Flatten Orbitlist HTML to one level only
+	function $orbitlistJS_flatten(core) {
 
-    // Detect height of orbitlist core in document
-    var coreHeight = core.parents().length;
+		// Detect height of orbitlist core in document
+		var coreHeight = core.parents().length;
+		
+		// Height of heighest orbit
+		var orbitHeight;
 
-    // Height of heighest orbit
-    var orbitHeight;
+		// All satellites: save parent element, then move li element up to first level
+		core.find('li').reverse().each(function() {
+			
+			var satellite = $(this);
+			
+			// Analyse height and apply corresponding css class
+			var height = (satellite.parents().length - coreHeight + 1) / 2;
+			satellite.addClass('orbitlistJS-orbit-' + height);
+			satellite.data('height', height);
+			orbitHeight = Math.max(orbitHeight, height);
 
-    // All satellites: save parent element, then move li element up to first level
-    core.find('li').reverse().each(function () {
+			// Save reference for parent element if there is any
+			satellite.data('parent', satellite.parent().parent().filter(".orbit li"));
+			core.prepend(satellite);
+					
+		});
+		
+		// Save core height and max orbit height in core
+		core.data('coreHeight', coreHeight);
+		core.data('orbitHeight', orbitHeight);
+		
+		// Initial visible height is 1 (children of core)
+		core.data('visibleHeight', 1);
+		
+		// Delete all sublists (now empty)
+		core.find('ul').remove();
 
-        var satellite = $(this);
+	}
 
-        // Analyse height and apply corresponding css class
-        var height = (satellite.parents().length - coreHeight + 1) / 2;
-        satellite.addClass('orbitlistJS-orbit-' + height);
-        satellite.data('height', height);
-        orbitHeight = Math.max(orbitHeight, height);
+	function $orbitlistJS_update(core) {
 
-        // Save reference for parent element if there is any
-        satellite.data('parent', satellite.parent().parent().filter(".orbit li"));
-        core.prepend(satellite);
+		var density;    // Density of satellites shown
+		var angle;      // Starting angle of orbit
 
-    });
+		// Height/width of element surrounding the orbitlist
+		var frameW = core.parent().width();
+		var frameH = core.parent().height();
+		var radius = Math.min(frameW, frameH) / 2;
+		var offsetTop = frameH / 2 - radius;
+		var offsetLeft = frameW / 2 - radius;
+		
+		// Data for first/lowest orbit
+		var orbitHeight = 1;
+		var orbit = core.find('.orbitlistJS-orbit-1');
 
-    // Save core height and max orbit height in core
-    core.data('coreHeight', coreHeight);
-    core.data('orbitHeight', orbitHeight);
+		// Read orbitlist's properties
+		var borders = core.data('orbitlistjs-borders');
+		var inner = core.data('orbitlistjs-inner');
+		var outer = core.data('orbitlistjs-outer');
+		var visibleHeight = core.data('visibleHeight');
 
-    // Initial visible height is 1 (children of core)
-    core.data('visibleHeight', 1);
+		// Format all visible orbits
+		do {
 
-    // Delete all sublists (now empty)
-    core.find('ul').remove();
+			// Detect density and angle of orbit
+			if (orbitHeight === 1) {
+				density = orbit.length;
+				angle = 0;
+			} else {
+				var squeeze = 3;    // TODO: Change to user-definable parameter
+				// Density at least as high as orbit below (looks ugly otherwise)
+				density = Math.max((orbit.length - 1) * squeeze, density);
+				angle = orbit.first().data('parent').data('angle') - 1/(density/(orbit.length-1))/2;
+			}
 
-}
+			// Format all satellites
+			orbit.each(function(index) {
 
-function $orbitlistJS_update(core) {
+				// TODO: Split up calculation for more clarity
+				var satellite = $(this);
+				var distance = (visibleHeight === 1 ? 0.5 : (borders + orbitHeight - 1) / (2 * borders + visibleHeight - 1));
+				distance = inner + distance * (outer - inner);
 
-    var density;    // Density of satellites shown
-    var angle;      // Starting angle of orbit
+				// Position satellite
+				var posTop = radius * distance * (-Math.cos((index / density + angle) * Math.PI * 2)) + radius + core.parent().offset().top + offsetTop - satellite.height() / 2;
+				var posLeft = radius * distance * (Math.sin((index / density + angle) * Math.PI * 2)) + radius + core.parent().offset().left + offsetLeft - satellite.width() / 2;
+				satellite.offset({top: posTop, left: posLeft});
+				
+				// Save angle for child orbit
+				satellite.data('angle', index / density + angle);
+				
+			});
+			
+			// Get one orbit higher
+			orbitHeight++;
+			orbit = core.find('.orbitlistJS-orbit-' + orbitHeight + ':visible');
+			
+		} while (orbit.length);
+	}
+	
+	$.fn.orbitlist = function(options) {
+		var settings = $.extend({
+			// default options here
+			onhover: false
+		}, options);
+		
+		return this.each(function(index) {
 
-    // Height/width of element surrounding the orbitlist
-    var frameW = core.parent().width();
-    var frameH = core.parent().height();
-    var radius = Math.min(frameW, frameH) / 2;
-    var offsetTop = frameH / 2 - radius;
-    var offsetLeft = frameW / 2 - radius;
+			// Create orbitlist's core
+			var core = $(this);
 
-    // Data for first/lowest orbit
-    var orbitHeight = 1;
-    var orbit = core.find('.orbitlistJS-orbit-1');
+			// Apply CSS class
+			core.addClass('orbitlistJS');
 
-    // Read orbitlist's properties
-    var borders = core.data('orbitlistjs-borders');
-    var inner = core.data('orbitlistjs-inner');
-    var outer = core.data('orbitlistjs-outer');
-    var arcBegin = core.data('orbitlistjs-begin');
-    var arcEnd = core.data('orbitlistjs-end');
-    var visibleHeight = core.data('visibleHeight');
+			// Determine orbitlist's properties
+			if (core.data('orbitlistjs-inner') === undefined)   { core.data('orbitlistjs-inner', defaultInner); }
+			if (core.data('orbitlistjs-outer') === undefined)   { core.data('orbitlistjs-outer', defaultOuter); }        
+			if (core.data('orbitlistjs-borders') === undefined) { core.data('orbitlistjs-borders', defaultBorders); }
 
-    // Calculate length of arc (between 0 and 1 = full circle)
-    if (arcEnd <= arcBegin) { arcEnd = arcBegin + 360; }
-    var arcLen = (arcEnd - arcBegin) / 360;
+			// Reduce HTML lists to only one level
+			// Otherwise dependencies between list elements will cause problems
+			// when moving particular satellites
+			$orbitlistJS_flatten(core);
 
-    // Format all visible orbits
-    do {
+			// Hide all orbits except first
+			core.find('li').filter(function() { 
+				return $(this).data('height') > 1;
+			}).hide();
 
-        // Detect density and angle of orbit
-        if (orbitHeight === 1) {
-            density = orbit.length;
-            angle = 0;
-        } else {
-            var squeeze = 3;    // TODO: Change to user-definable parameter
-            // Density at least as high as orbit below (looks ugly otherwise)
-            density = Math.max((orbit.length - 1) * squeeze, density);
-            angle = orbit.first().data('parent').data('angle') - 1 / (density / (orbit.length - 1)) / 2;
-        }
+			// TODO: Way too much show and hide again in the following lines
+			// Better filtering is needed!
 
-        // Format all satellites
-        orbit.each(function (index) {
+			// Bind satellite click event
+			// TODO: only bind to satellites that actually have children
+			// therefore implement isParent property
+			var event_handler = function(event) {
+				satellite = $(this);
 
-            // set satellite jquery element
-            var satellite = $(this);
+				// re-distribute styling classes
+				if (satellite.hasClass('orbitlistJS-active')) {
+					satellite.removeClass('orbitlistJS-active orbitlistJS-trace');
+					satellite.data('parent').addClass('orbitlistJS-active');
+				} else {
+					core.find('li').removeClass('orbitlistJS-active orbitlistJS-trace');
+					satellite.addClass('orbitlistJS-active');
+					$orbitlistJS_trace(satellite);
+				}
+				
+				// Only show satellites with no parents or parent in current trace
+				// Calculate current max visible height
+				var visibleHeight = 1;
+				core.find('li').hide();
+				core.find('li').filter(function(index) {
+					var parent = $(this).data('parent');
+					var showSatellite = !parent.length | parent.hasClass('orbitlistJS-trace');
+					if (showSatellite) { visibleHeight = Math.max(visibleHeight, $(this).data('height')); }
+					return showSatellite;
+				}).show();
+				core.data('visibleHeight', visibleHeight);
+				
+				// Update orbitlist
+				$orbitlistJS_update(core);
+				
+				// Prevent event bubbling
+				event.stopPropagation();
+			};
+			
+			if (settings['onhover']) {
+				core.find('li').mouseover(event_handler);
+			} else {
+				core.find('li').click(event_handler);
+			}
 
-            // Calculate distance from core (between 0 and 1)
-            var distance = (visibleHeight === 1 ? 0.5 : (borders + orbitHeight - 1) / (2 * borders + visibleHeight - 1));
-            distance = inner + distance * (outer - inner);
+			// Update orbitlist in order to create initial view
+			$orbitlistJS_update(core);
 
-            // Calculate satellite position
-            var radiant = (index / density + angle + arcBegin) * arcLen * Math.PI * 2;
-            var vertical = -Math.cos(radiant);
-            var horizontal = Math.sin(radiant);
+			// Update orbitlist on window resize
+			$(window).resize(function() {
+				$orbitlistJS_update(core);
+			});
 
-            // Positions without offset (circle center = 0|0)
-            var posTop = radius * distance * vertical;
-            var posLeft = radius * distance * horizontal;
-            
-            // Correct positions by parent element, centering and satellite dimensions
-            posTop = posTop + (radius + offsetTop) + core.parent().offset().top - satellite.height() / 2;
-            posLeft = posLeft + (radius + offsetLeft) + core.parent().offset().left - satellite.width() / 2;
-            
-            // Position satellite
-            satellite.offset({top: posTop, left: posLeft});
-
-            // Save angle for child orbit
-            satellite.data('angle', index / density + angle);
-
-        });
-
-        // Get one orbit higher
-        orbitHeight++;
-        orbit = core.find('.orbitlistJS-orbit-' + orbitHeight + ':visible');
-
-    } while (orbit.length);
-
-}
-
+		});
+	};
+})(jQuery);
 
 // Document ready setup
-$(function () {
-
+jQuery(function () {
     // Transform each .orbit class into orbitlist
-    $('ul.orbit').each(function (index) {
-
-        // Create orbitlist's core
-        var core = $(this);
-
-        // Apply CSS class
-        core.addClass('orbitlistJS');
-
-        // Determine orbitlist's properties
-        if (core.data('orbitlistjs-inner') === undefined) {
-            core.data('orbitlistjs-inner', defaultInner);
-        }
-        if (core.data('orbitlistjs-outer') === undefined) {
-            core.data('orbitlistjs-outer', defaultOuter);
-        }
-        if (core.data('orbitlistjs-borders') === undefined) {
-            core.data('orbitlistjs-borders', defaultBorders);
-        }
-        if (core.data('orbitlistjs-begin') === undefined) {
-            core.data('orbitlistjs-begin', defaultBegin);
-        }
-        if (core.data('orbitlistjs-end') === undefined) {
-            core.data('orbitlistjs-end', core.data('orbitlistjs-begin'));
-        }
-
-        // Reduce HTML lists to only one level
-        // Otherwise dependencies between list elements will cause problems
-        // when moving particular satellites
-        $orbitlistJS_flatten(core);
-
-        // Hide all orbits except first
-        core.find('li').filter(function () {
-            return $(this).data('height') > 1;
-        }).hide();
-
-        // TODO: Way too much show and hide again in the following lines
-        // Better filtering is needed!
-
-        // Bind satellite click event
-        // TODO: only bind to satellites that actually have children
-        // therefore implement isParent property
-        core.find('li').click(function (event) {
-
-            satellite = $(this);
-
-            // re-distribute styling classes
-            if (satellite.hasClass('orbitlistJS-active')) {
-                satellite.removeClass('orbitlistJS-active orbitlistJS-trace');
-                satellite.data('parent').addClass('orbitlistJS-active');
-            } else {
-                core.find('li').removeClass('orbitlistJS-active orbitlistJS-trace');
-                satellite.addClass('orbitlistJS-active');
-                $orbitlistJS_trace(satellite);
-            }
-
-            // Only show satellites with no parents or parent in current trace
-            // Calculate current max visible height
-            var visibleHeight = 1;
-            core.find('li').hide();
-            core.find('li').filter(function (index) {
-                var parent = $(this).data('parent');
-                var showSatellite = !parent.length | parent.hasClass('orbitlistJS-trace');
-                if (showSatellite) {
-                    visibleHeight = Math.max(visibleHeight, $(this).data('height'));
-                }
-                return showSatellite;
-            }).show();
-            core.data('visibleHeight', visibleHeight);
-
-            // Update orbitlist
-            $orbitlistJS_update(core);
-
-            // Prevent event bubbling
-            event.stopPropagation();
-        });
-
-        // Update orbitlist in order to create initial view
-        $orbitlistJS_update(core);
-
-        // Update orbitlist on window resize
-        $(window).resize(function () {
-            $orbitlistJS_update(core);
-        });
-
-    });
+    jQuery('ul.orbit').orbitlist();
 });

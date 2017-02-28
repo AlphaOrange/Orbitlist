@@ -71,8 +71,8 @@
         var angle; // Starting angle of orbit
 
         // Height/width of element surrounding the orbitlist
-        var frameW = core.parent().width();
-        var frameH = core.parent().height();
+        var frameW = core.parent().outerWidth();
+        var frameH = core.parent().outerHeight();
         var radius = Math.min(frameW, frameH) / 2;
         var offsetTop = frameH / 2 - radius;
         var offsetLeft = frameW / 2 - radius;
